@@ -27,7 +27,7 @@
 
 typedef pcl::PointCloud<pcl::PointXYZRGBA> PointCloud;
 
-const std::string RANGE_SENSOR_TOPIC = "/camera/depth_registered/points";
+const std::string RANGE_SENSOR_TOPIC = "/kinect/hd/points";
 
 // input and output ROS topic data
 std::string g_sensor_frame;
@@ -139,6 +139,11 @@ int main(int argc, char** argv)
   // point cloud read from sensor
   else if (!cloud_topic.empty())
   {
+    // wait for and then lookup transform between camera frame and base frame
+    tf::TransformListener transform_listener;
+    transform_listener.waitForTransform(RANGE_SENSOR_FRAME, "base", ros::Time(0), ros::Duration(3));
+    transform_listener.lookupTransform("base", RANGE_SENSOR_FRAME, ros::Time(0), g_transform);
+
     // create subscriber for camera topic
     printf("Reading point cloud data from sensor topic: %s\n", cloud_topic.c_str());
     sub = node.subscribe(cloud_topic, 10, chatterCallback);

@@ -49,6 +49,12 @@
 #include "curvature_estimation_taubin.hpp"
 #include "cylindrical_shell.h"
 
+#include <pcl/impl/pcl_base.hpp>
+#include <pcl/kdtree/impl/kdtree_flann.hpp>
+#include <pcl/search/impl/kdtree.hpp>
+#include <pcl/search/impl/organized.hpp>
+#include <pcl/features/impl/normal_3d.hpp>
+
 
 typedef pcl::PointCloud<pcl::PointXYZRGBA> PointCloud;
 

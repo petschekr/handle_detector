@@ -2,7 +2,8 @@
 	<node name="localization" pkg="handle_detector" type="handle_detector_localization" output="screen">
 		
     <!-- the ROS topic from which to get the point cloud -->
-    <param name="cloud_topic" value="/camera/depth_registered/points" />
+    <param name="cloud_topic" value="/kinect/hd/points" />
+		<param name="point_cloud_source" value="1" />
     
     <!-- affordance search parameters -->
     <param name="file" value="" />
@@ -10,7 +11,7 @@
 		<param name="target_radius_error" value="0.012" />
 		<param name="affordance_gap" value="0.008" />
 		<param name="sample_size" value="10000" />		
-		<param name="use_clearance_filter" value="true" />
+		<param name="use_clearance_filter" value="false" />
 		<param name="use_occlusion_filter" value="true" />
     <param name="curvature_estimator" value="0" />
 		<param name="update_interval" value="600.0" />
