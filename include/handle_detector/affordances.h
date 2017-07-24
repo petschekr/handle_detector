@@ -39,8 +39,9 @@
 #include <pcl/features/normal_3d.h>
 #include <pcl/features/normal_3d_omp.h>
 #include <pcl/kdtree/kdtree_flann.h>
-#include <pcl_ros/point_cloud.h>
+#include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <ros/ros.h>
 #include <stdlib.h>
 #include <string>
 #include <tf/transform_datatypes.h>
@@ -48,8 +49,15 @@
 #include "curvature_estimation_taubin.hpp"
 #include "cylindrical_shell.h"
 
-typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
-typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloudRGB;
+#include <pcl/impl/pcl_base.hpp>
+#include <pcl/kdtree/impl/kdtree_flann.hpp>
+#include <pcl/search/impl/kdtree.hpp>
+#include <pcl/search/impl/organized.hpp>
+#include <pcl/features/impl/normal_3d.hpp>
+
+
+typedef pcl::PointCloud<pcl::PointXYZRGBA> PointCloud;
+
 
 // workspace limits of the robot
 struct WorkspaceLimits
@@ -61,6 +69,7 @@ struct WorkspaceLimits
 	double min_z;
 	double max_z;
 };
+
 
 /** \brief Affordances localizes grasp affordances and handles in a point cloud. It also provides 
   * helper methods to filter out points from the point cloud that are outside of the robot's 
@@ -90,14 +99,7 @@ class Affordances
      */
 		PointCloud::Ptr 
     workspaceFilter(const PointCloud::Ptr &cloud_in, tf::StampedTransform *transform = NULL);
-    
-		/** \brief Filter out all points from a given cloud that are outside of a cube defined by the
-     * workspace limits of the robot, and return the filtered cloud.
-     * \param cloud_in the point cloud to be filtered
-     */
-    PointCloudRGB::Ptr 
-    workspaceFilter(const PointCloudRGB::Ptr &cloud_in, tf::StampedTransform *transform = NULL);
-        
+
     /** \brief Search grasp affordances (cylindrical shells) in a given point cloud.
      * \param cloud the point cloud in which affordances are searched for
      */

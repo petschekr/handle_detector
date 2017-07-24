@@ -2,24 +2,22 @@ cmake_minimum_required(VERSION 2.8.3)
 project(handle_detector)
 
 ## find catkin and required packages
-find_package(catkin REQUIRED COMPONENTS 
+find_package(catkin REQUIRED 
+	cmake_modules
   eigen_conversions 
   geometry_msgs 
 	message_generation   
   roscpp 
-	pcl_ros
   pcl_conversions
   std_msgs 
 	tf
 	tf_conversions
   visualization_msgs)
 
-## find Lapack
-find_package(LAPACK REQUIRED)
-
-## find Eigen package
+## find Lapack and Eigen packages
 find_package(Eigen REQUIRED)
-include_directories(${Eigen_INCLUDE_DIRS})
+find_package(LAPACK REQUIRED)
+find_package(PCL REQUIRED)
 
 ## compiler optimization flags
 set(CMAKE_CXX_FLAGS "-DNDEBUG -O3 -fopenmp -Wno-deprecated")
@@ -39,11 +37,11 @@ catkin_package(
   INCLUDE_DIRS
     include
   CATKIN_DEPENDS 
+    cmake_modules
     eigen_conversions 
     geometry_msgs 
     message_runtime 
     roscpp 
-    pcl_ros
     pcl_conversions
     std_msgs 
     tf
@@ -51,9 +49,10 @@ catkin_package(
     visualization_msgs
   DEPENDS
     Eigen
-    LAPACK)
+    LAPACK
+    PCL)
 
-include_directories(${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} include)
+include_directories(${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS} include)
 
 ## create executables
 add_executable(${PROJECT_NAME}_localization src/localization.cpp)
@@ -77,7 +76,7 @@ target_link_libraries(${PROJECT_NAME}_localization ${PROJECT_NAME}_visualizer)
 target_link_libraries(${PROJECT_NAME}_localization ${PROJECT_NAME}_messages)
 
 ## link libraries to importance_sampling executable
-target_link_libraries(${PROJECT_NAME}_importance_sampling ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}_importance_sampling ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 target_link_libraries(${PROJECT_NAME}_importance_sampling ${PROJECT_NAME}_affordances)
 target_link_libraries(${PROJECT_NAME}_importance_sampling ${PROJECT_NAME}_visualizer)
 target_link_libraries(${PROJECT_NAME}_importance_sampling ${PROJECT_NAME}_messages)
@@ -86,7 +85,7 @@ target_link_libraries(${PROJECT_NAME}_importance_sampling ${PROJECT_NAME}_sampli
 ## link libraries to affordances library
 target_link_libraries(${PROJECT_NAME}_affordances ${catkin_LIBRARIES})
 target_link_libraries(${PROJECT_NAME}_affordances ${PROJECT_NAME}_cylindrical_shell)
-target_link_libraries(${PROJECT_NAME}_affordances lapack)
+target_link_libraries(${PROJECT_NAME}_affordances lapack ${PCL_LIBRARIES})
 
 ## link libraries to messages library
 target_link_libraries(${PROJECT_NAME}_messages ${catkin_LIBRARIES})
@@ -94,6 +93,8 @@ target_link_libraries(${PROJECT_NAME}_messages ${catkin_LIBRARIES})
 ## link libraries to sampling library
 target_link_libraries(${PROJECT_NAME}_sampling ${PROJECT_NAME}_affordances)
 target_link_libraries(${PROJECT_NAME}_sampling ${PROJECT_NAME}_sampling_visualizer)
+
+target_link_libraries(${PROJECT_NAME}_sampling_visualizer ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
 ## install targets
 install(TARGETS ${PROJECT_NAME}_localization ${PROJECT_NAME}_importance_sampling 
