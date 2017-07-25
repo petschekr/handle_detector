@@ -57,7 +57,7 @@ void chatterCallback(const sensor_msgs::PointCloud2ConstPtr& input)
   // search grasp affordances
   double start_time = omp_get_wtime();
   g_cylindrical_shells = g_affordances.searchAffordances(g_cloud, &g_transform);
-  if (g_cylindrical_shells.size() == 0)
+  if (g_cylindrical_shells.empty())
   {
     printf("No handles found!\n");
     g_prev_time = omp_get_wtime();
@@ -82,7 +82,7 @@ int main(int argc, char** argv)
   const int SENSOR = 1;
 
   // initialize random seed
-  srand (time(NULL));
+  srand ((unsigned int) time(NULL));
 
   // initialize ROS
   ros::init(argc, argv, "localization");
@@ -176,7 +176,7 @@ int main(int argc, char** argv)
   handle_detector::HandleListMsg handle_list_msg;
 
   // how often things are published
-  ros::Rate rate(10);
+  ros::Rate rate(1);
 
   double prev_time = omp_get_wtime();
 
@@ -223,7 +223,6 @@ int main(int argc, char** argv)
 
     // publish handles for visualization
     marker_array_pub_handles.publish(marker_array_msg_handles);
-
     // publish handle numbers for visualization
     marker_array_pub_handle_numbers.publish(marker_array_msg_handle_numbers);
 
