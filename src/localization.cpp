@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <tf/transform_datatypes.h>
+#include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 #include <vector>
 #include "handle_detector/visualizer.h"
@@ -37,6 +38,7 @@ Affordances g_affordances;
 std::vector<CylindricalShell> g_cylindrical_shells;
 std::vector<std::vector<CylindricalShell> > g_handles;
 tf::StampedTransform g_transform;
+std::vector<tf::Transform> g_transforms;
 
 // synchronization
 double g_prev_time;
@@ -66,6 +68,9 @@ void chatterCallback(const sensor_msgs::PointCloud2ConstPtr& input)
 
   // search handles
   g_handles = g_affordances.searchHandles(g_cloud, g_cylindrical_shells);
+
+  // averaged transforms to publish
+  g_transforms = g_affordances.generateHandleTransforms(g_handles, RANGE_SENSOR_FRAME);
 
   // measure runtime
   printf("Affordance and handle search done in %.3f sec.\n", omp_get_wtime() - start_time);
@@ -143,7 +148,7 @@ int main(int argc, char** argv)
     // wait for and then lookup transform between camera frame and base frame
     tf::TransformListener transform_listener;
     while (!transform_listener.waitForTransform("base_link", RANGE_SENSOR_FRAME, ros::Time(0), ros::Duration(3))) {
-      printf("Waiting for transform...");
+      printf("Waiting for transform...\n");
     }
     transform_listener.lookupTransform("base_link", RANGE_SENSOR_FRAME, ros::Time(0), g_transform);
 
@@ -174,6 +179,8 @@ int main(int argc, char** argv)
   std::vector<ros::Publisher> handle_pubs;
   handle_detector::CylinderArrayMsg cylinder_list_msg;
   handle_detector::HandleListMsg handle_list_msg;
+
+  tf::TransformBroadcaster tfBroadcaster;
 
   // how often things are published
   ros::Rate rate(1);
@@ -231,6 +238,14 @@ int main(int argc, char** argv)
 
     // publish handles as ROS topic
     handles_pub.publish(handle_list_msg);
+
+    // publish handles as transforms
+    std::vector<tf::Transform>::iterator i;
+    int count = 0;
+    for (i = g_transforms.begin(); i < g_transforms.end(); i++) {
+      tfBroadcaster.sendTransform(tf::StampedTransform(*i, ros::Time::now(), RANGE_SENSOR_FRAME, "handle" + boost::lexical_cast<std::string>(count)));
+      count++;
+    }
 
     //~ ROS_INFO("published %i grasp affordances for grasping", (int) cylinder_list_msg.cylinders.size());
     //~ ROS_INFO("published %i handles for grasping", (int) handle_list_msg.handles.size());

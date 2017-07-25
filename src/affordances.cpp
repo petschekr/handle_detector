@@ -1,4 +1,5 @@
 #include <handle_detector/affordances.h>
+#include <handle_detector/messages.h>
 
 typedef pcl::PointCloud<pcl::PointXYZRGBA> PointCloud;
 
@@ -608,6 +609,40 @@ std::vector<std::vector<CylindricalShell> > Affordances::searchHandles(const Poi
   }
 
   return handles;
+}
+
+std::vector<tf::Transform> Affordances::generateHandleTransforms(const std::vector< std::vector<CylindricalShell> > &handles,
+                                                                 std::string frame) {
+    Messages messages;
+    std::vector<tf::Transform> handleTransforms;
+
+    std::vector< std::vector<CylindricalShell> >::const_iterator i;
+    for (i = handles.begin(); i < handles.end(); i++) {
+        std::vector<CylindricalShell> handle = *i;
+
+        Position averagePosition = {};
+
+        std::vector<CylindricalShell>::iterator j;
+        for (j = handle.begin(); j < handle.end(); j++) {
+            handle_detector::CylinderMsg cylinder = messages.createCylinder(*j, frame);
+            averagePosition.x += cylinder.pose.position.x;
+            averagePosition.y += cylinder.pose.position.y;
+            averagePosition.z += cylinder.pose.position.z;
+        }
+
+        averagePosition.x /= handle.size();
+        averagePosition.y /= handle.size();
+        averagePosition.z /= handle.size();
+
+        tf::Transform transform;
+        transform.setOrigin(tf::Vector3(averagePosition.x, averagePosition.y, averagePosition.z));
+        tf::Quaternion rotation;
+        rotation.setEuler(0, 0, 0);
+        transform.setRotation(rotation);
+        handleTransforms.push_back(transform);
+    }
+
+    return handleTransforms;
 }
 
 std::vector<CylindricalShell> Affordances::searchAffordances(const PointCloud::Ptr &cloud,

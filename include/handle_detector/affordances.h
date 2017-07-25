@@ -45,6 +45,7 @@
 #include <stdlib.h>
 #include <string>
 #include <tf/transform_datatypes.h>
+#include <tf/transform_broadcaster.h>
 #include "curvature_estimation_taubin.h"
 #include "curvature_estimation_taubin.hpp"
 #include "cylindrical_shell.h"
@@ -68,6 +69,20 @@ struct WorkspaceLimits
 	double max_y;
 	double min_z;
 	double max_z;
+};
+
+struct Position
+{
+    double x;
+    double y;
+    double z;
+};
+struct Orientation
+{
+    double x;
+    double y;
+    double z;
+    double w;
 };
 
 
@@ -130,6 +145,9 @@ class Affordances
      */
     std::vector< std::vector<CylindricalShell> > 
     searchHandles(const PointCloud::Ptr &cloud, std::vector<CylindricalShell> shells);
+
+	std::vector<tf::Transform>
+	generateHandleTransforms(const std::vector< std::vector<CylindricalShell> > &handles, std::string frame);
     
     std::vector<int> 
     createRandomIndices(const PointCloud::Ptr &cloud, int size);
