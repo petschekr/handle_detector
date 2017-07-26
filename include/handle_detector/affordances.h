@@ -72,14 +72,13 @@ struct WorkspaceLimits
 	double max_z;
 };
 
-struct Position
+struct Vector3
 {
     double x;
     double y;
     double z;
 };
-struct Orientation
-{
+struct Vector4 {
     double x;
     double y;
     double z;

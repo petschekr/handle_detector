@@ -629,24 +629,54 @@ std::vector<tf::Transform> Affordances::generateHandleTransforms(const std::vect
     for (i = handles.begin(); i < handles.end(); i++) {
         std::vector<CylindricalShell> handle = *i;
 
-        Position averagePosition = {};
-
+        Vector3 averagePosition = {};
+        Vector3 averageAxis = {};
+        bool isFirstIteration = true;
+        Vector3 averageAxisSigns = {1, 1, 1};
         std::vector<CylindricalShell>::iterator j;
         for (j = handle.begin(); j < handle.end(); j++) {
             handle_detector::CylinderMsg cylinder = messages.createCylinder(*j, frame);
+
             averagePosition.x += cylinder.pose.position.x;
             averagePosition.y += cylinder.pose.position.y;
             averagePosition.z += cylinder.pose.position.z;
-        }
 
+            if (isFirstIteration) {
+                // Find the correct signs
+                if (cylinder.axis.x < 0) {
+                    averageAxisSigns.x = -1;
+                }
+                if (cylinder.axis.y < 0) {
+                    averageAxisSigns.y = -1;
+                }
+                if (cylinder.axis.z < 0) {
+                    averageAxisSigns.z = -1;
+                }
+                isFirstIteration = false;
+            }
+
+            averageAxis.x += fabs(cylinder.axis.x) * averageAxisSigns.x;
+            averageAxis.y += fabs(cylinder.axis.y) * averageAxisSigns.y;
+            averageAxis.z += fabs(cylinder.axis.z) * averageAxisSigns.z;
+        }
         averagePosition.x /= handle.size();
         averagePosition.y /= handle.size();
         averagePosition.z /= handle.size();
 
+        averageAxis.x /= handle.size();
+        averageAxis.y /= handle.size();
+        averageAxis.z /= handle.size();
+
+        // Finalize averaging rotations
+        // Source: http://answers.ros.org/question/31006/how-can-a-vector3-axis-be-used-to-produce-a-quaternion/?answer=31008#post-id-31008
+        const tf::Vector3 upVector(0, 0, 1);
+        tf::Vector3 axisVector(averageAxis.x, averageAxis.y, averageAxis.z);
+        tf::Vector3 rightVector = axisVector.cross(upVector);
+        rightVector.normalize();
+        tf::Quaternion rotation(rightVector, -1.0 * acos(axisVector.dot(upVector)));
+
         tf::Transform transform;
         transform.setOrigin(tf::Vector3(averagePosition.x, averagePosition.y, averagePosition.z));
-        tf::Quaternion rotation;
-        rotation.setEuler(0, 0, 0);
         transform.setRotation(rotation);
 
         tf::StampedTransform cameraPosition;
