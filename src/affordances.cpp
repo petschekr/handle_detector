@@ -54,6 +54,10 @@ void Affordances::initParams(ros::NodeHandle node)
   node.param("workspace_max_z", this->workspace_limits.max_z, this->WORKSPACE_MAX);
   node.param("num_threads", this->num_threads, 1);
 
+    this->tfBroadcaster = new tf::TransformBroadcaster();
+    this->tfBuffer = new tf2_ros::Buffer();
+    this->tfListener = new tf2_ros::TransformListener(*this->tfBuffer);
+
   // print parameters
   printf("PARAMETERS\n");
   printf(" file: %s\n", this->file.c_str());
@@ -613,6 +617,11 @@ std::vector<std::vector<CylindricalShell> > Affordances::searchHandles(const Poi
 
 std::vector<tf::Transform> Affordances::generateHandleTransforms(const std::vector< std::vector<CylindricalShell> > &handles,
                                                                  std::string frame) {
+    const std::string GLOBAL_FRAME = "map";
+    if (frame[0] == '/') {
+        frame.erase(0, 1);
+    }
+
     Messages messages;
     std::vector<tf::Transform> handleTransforms;
 
@@ -639,6 +648,11 @@ std::vector<tf::Transform> Affordances::generateHandleTransforms(const std::vect
         tf::Quaternion rotation;
         rotation.setEuler(0, 0, 0);
         transform.setRotation(rotation);
+
+        tf::StampedTransform cameraPosition;
+        tf::transformStampedMsgToTF((*this->tfBuffer).lookupTransform(frame, GLOBAL_FRAME, ros::Time(0)), cameraPosition);
+        transform = cameraPosition.inverseTimes(transform);
+
         handleTransforms.push_back(transform);
     }
 

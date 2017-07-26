@@ -243,7 +243,7 @@ int main(int argc, char** argv)
     std::vector<tf::Transform>::iterator i;
     int count = 0;
     for (i = g_transforms.begin(); i < g_transforms.end(); i++) {
-      tfBroadcaster.sendTransform(tf::StampedTransform(*i, ros::Time::now(), RANGE_SENSOR_FRAME, "handle" + boost::lexical_cast<std::string>(count)));
+      tfBroadcaster.sendTransform(tf::StampedTransform(*i, ros::Time::now(), "map", "handle" + boost::lexical_cast<std::string>(count)));
       count++;
     }
 

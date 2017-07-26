@@ -46,6 +46,7 @@
 #include <string>
 #include <tf/transform_datatypes.h>
 #include <tf/transform_broadcaster.h>
+#include <tf2_ros/transform_listener.h>
 #include "curvature_estimation_taubin.h"
 #include "curvature_estimation_taubin.hpp"
 #include "cylindrical_shell.h"
@@ -260,6 +261,10 @@ class Affordances
 		WorkspaceLimits workspace_limits;
 		int num_threads;
     std::string file;
+
+    tf::TransformBroadcaster* tfBroadcaster;
+    tf2_ros::Buffer* tfBuffer;
+    tf2_ros::TransformListener* tfListener;
     		
 		// standard parameters
 		static const int CURVATURE_ESTIMATOR; // curvature axis estimation method
