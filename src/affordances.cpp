@@ -652,6 +652,12 @@ std::vector<tf::Transform> Affordances::generateHandleTransforms(const std::vect
                 if (cylinder.axis.z < 0) {
                     averageAxisSigns.z = -1;
                 }
+                // Orient so that Z-axis is always facing up
+                if (averageAxisSigns.x > 0) {
+                    averageAxisSigns.x *= -1;
+                    averageAxisSigns.y *= -1;
+                    averageAxisSigns.z *= -1;
+                }
                 isFirstIteration = false;
             }
 
