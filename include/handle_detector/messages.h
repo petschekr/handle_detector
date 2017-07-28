@@ -35,6 +35,7 @@
 #include "handle_detector/CylinderArrayMsg.h"
 #include "handle_detector/CylinderMsg.h"
 #include "handle_detector/HandleListMsg.h"
+#include "handle_detector/HandleQuery.h"
 #include "cylindrical_shell.h"
 #include <eigen_conversions/eigen_msg.h>
 #include <geometry_msgs/Pose.h>

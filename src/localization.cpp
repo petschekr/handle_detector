@@ -1,7 +1,4 @@
 #include "handle_detector/affordances.h"
-#include "handle_detector/CylinderArrayMsg.h"
-#include "handle_detector/CylinderMsg.h"
-#include "handle_detector/HandleListMsg.h"
 #include <ctype.h>
 #include "handle_detector/cylindrical_shell.h"
 #include "Eigen/Dense"
@@ -44,12 +41,18 @@ std::vector<tf::Transform> g_transforms;
 double g_prev_time;
 double g_update_interval;
 bool g_has_read = false;
-
+bool asService = false;
+bool updateRequested = false;
 
 void chatterCallback(const sensor_msgs::PointCloud2ConstPtr& input)
 {
-  if (omp_get_wtime() - g_prev_time < g_update_interval)
-    return;
+  if (asService && !updateRequested) {
+      return;
+  }
+  if (!asService && omp_get_wtime() - g_prev_time < g_update_interval) {
+      return;
+  }
+  updateRequested = false;
 
   // convert ROS sensor message to PCL point cloud
   pcl::fromROSMsg(*input, *g_cloud);
@@ -79,6 +82,37 @@ void chatterCallback(const sensor_msgs::PointCloud2ConstPtr& input)
   g_prev_time = omp_get_wtime();
 }
 
+bool handleQuery(handle_detector::HandleQuery::Request &request, handle_detector::HandleQuery::Response &response) {
+    double beforeRequestTime = g_prev_time;
+    updateRequested = true;
+
+    ros::Rate subRate(10);
+    while (beforeRequestTime == g_prev_time) {
+        ROS_INFO("Waiting for sensor update to send...");
+        ros::spinOnce();
+        subRate.sleep();
+    }
+
+    std::vector<tf::Transform>::iterator i;
+    for (i = g_transforms.begin(); i < g_transforms.end(); i++) {
+        geometry_msgs::PoseStamped pose;
+        pose.header.stamp = ros::Time::now();
+        pose.header.frame_id = "map";
+
+        pose.pose.position.x = i->getOrigin().getX();
+        pose.pose.position.y = i->getOrigin().getY();
+        pose.pose.position.z = i->getOrigin().getZ();
+        pose.pose.orientation.x = i->getRotation().getX();
+        pose.pose.orientation.y = i->getRotation().getY();
+        pose.pose.orientation.z = i->getRotation().getZ();
+        pose.pose.orientation.w = i->getRotation().getW();
+
+        response.handles.push_back(pose);
+    }
+    ROS_INFO("Returning %d handle(s)", (int) response.handles.size());
+    return true;
+}
+
 
 int main(int argc, char** argv)
 {
@@ -100,10 +134,15 @@ int main(int argc, char** argv)
   // set point cloud update interval from launch file
   node.param("update_interval", g_update_interval, 10.0);
 
+    // whether to publish RViz visualizations
+    bool publish_rviz_topics;
+    node.param("publish_rviz_topics", publish_rviz_topics, true);
+
   // read parameters
   g_affordances.initParams(node);
 
   ros::Subscriber sub;
+  ros::ServiceServer handleQueryService;
 
   g_transform.setIdentity();
 
@@ -147,14 +186,24 @@ int main(int argc, char** argv)
   {
     // wait for and then lookup transform between camera frame and base frame
     tf::TransformListener transform_listener;
-    while (!transform_listener.waitForTransform("base_link", RANGE_SENSOR_FRAME, ros::Time(0), ros::Duration(3))) {
+    const unsigned int MAX_TRIES = 20;
+    unsigned int tries = 0;
+    while (!transform_listener.waitForTransform("base_link", RANGE_SENSOR_FRAME, ros::Time(0), ros::Duration(3)) && tries < MAX_TRIES) {
       printf("Waiting for transform...\n");
+      tries++;
     }
     transform_listener.lookupTransform("base_link", RANGE_SENSOR_FRAME, ros::Time(0), g_transform);
 
     // create subscriber for camera topic
     printf("Reading point cloud data from sensor topic: %s\n", cloud_topic.c_str());
     sub = node.subscribe(cloud_topic, 10, chatterCallback);
+
+    node.param("as_service", asService, false);
+    if (asService) {
+        std::string serviceName = "handle_query";
+        handleQueryService = node.advertiseService(serviceName, handleQuery);
+        ROS_INFO("Handle detector service initialized");
+    }
   }
 
   // visualization of point cloud, grasp affordances, and handles
@@ -221,17 +270,19 @@ int main(int argc, char** argv)
     pc2msg.header.frame_id = g_sensor_frame;
     pcl_pub.publish(pc2msg);
 
-    // publish cylinders for visualization
-    marker_array_pub.publish(marker_array_msg);
+    if (publish_rviz_topics) {
+        // publish cylinders for visualization
+        marker_array_pub.publish(marker_array_msg);
 
-    // publish handles for visualization
-    for (std::size_t i = 0; i < handle_pubs.size(); i++)
-      handle_pubs[i].publish(marker_arrays[i]);
+        // publish handles for visualization
+        for (std::size_t i = 0; i < handle_pubs.size(); i++)
+            handle_pubs[i].publish(marker_arrays[i]);
 
-    // publish handles for visualization
-    marker_array_pub_handles.publish(marker_array_msg_handles);
-    // publish handle numbers for visualization
-    marker_array_pub_handle_numbers.publish(marker_array_msg_handle_numbers);
+        // publish handles for visualization
+        marker_array_pub_handles.publish(marker_array_msg_handles);
+        // publish handle numbers for visualization
+        marker_array_pub_handle_numbers.publish(marker_array_msg_handle_numbers);
+    }
 
     // publish cylinders as ROS topic
     cylinder_pub.publish(cylinder_list_msg);

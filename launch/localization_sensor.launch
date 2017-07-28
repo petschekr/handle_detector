@@ -4,6 +4,8 @@
     <!-- the ROS topic from which to get the point cloud -->
     <param name="cloud_topic" value="/kinect/hd/points" />
 		<param name="point_cloud_source" value="1" />
+		<param name="publish_rviz_topics" value="true" />
+		<param name="as_service" value="true" />
     
     <!-- affordance search parameters -->
     <param name="file" value="" />

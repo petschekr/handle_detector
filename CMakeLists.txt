@@ -30,6 +30,12 @@ add_message_files(
   HandleListMsg.msg
 )
 
+## add services
+add_service_files(
+  FILES
+  HandleQuery.srv
+)
+
 generate_messages(DEPENDENCIES geometry_msgs)
 
 ## Declare a catkin package
@@ -39,9 +45,10 @@ catkin_package(
   CATKIN_DEPENDS 
     cmake_modules
     eigen_conversions 
-    geometry_msgs 
-    message_runtime 
-    roscpp 
+    geometry_msgs
+	message_generation
+    message_runtime
+    roscpp
     pcl_conversions
     std_msgs 
     tf
@@ -68,6 +75,8 @@ add_library(${PROJECT_NAME}_visualizer src/visualizer.cpp)
 
 ## add dependencies
 add_dependencies(${PROJECT_NAME}_messages ${PROJECT_NAME}_gencpp)
+add_dependencies(${PROJECT_NAME}_affordances ${PROJECT_NAME}_gencpp)
+#add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
 
 ## link libraries to localization executable
 target_link_libraries(${PROJECT_NAME}_localization ${catkin_LIBRARIES})
