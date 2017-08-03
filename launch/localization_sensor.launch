@@ -1,12 +1,15 @@
 <launch>
+	<arg name="as_service" default="false" />
+	<arg name="publish_transforms" default="true" />
+
 	<node name="localization" pkg="handle_detector" type="handle_detector_localization" output="screen">
 		
     <!-- the ROS topic from which to get the point cloud -->
     <param name="cloud_topic" value="/kinect/hd/points" />
 		<param name="point_cloud_source" value="1" />
 		<param name="publish_rviz_topics" value="true" />
-		<param name="as_service" value="true" />
-		<param name="publish_transforms" value="false" />
+		<param name="as_service" value="$(arg as_service)" />
+		<param name="publish_transforms" value="$(arg publish_transforms)" />
     
     <!-- affordance search parameters -->
     <param name="file" value="" />
