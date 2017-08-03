@@ -6,6 +6,7 @@
 		<param name="point_cloud_source" value="1" />
 		<param name="publish_rviz_topics" value="true" />
 		<param name="as_service" value="true" />
+		<param name="publish_transforms" value="false" />
     
     <!-- affordance search parameters -->
     <param name="file" value="" />

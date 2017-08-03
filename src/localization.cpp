@@ -138,6 +138,10 @@ int main(int argc, char** argv)
     bool publish_rviz_topics;
     node.param("publish_rviz_topics", publish_rviz_topics, true);
 
+    // whether to publish transforms (might be confusing with rail_object_locator running)
+    bool publish_transforms;
+    node.param("publish_transforms", publish_transforms, true);
+
   // read parameters
   g_affordances.initParams(node);
 
@@ -290,12 +294,14 @@ int main(int argc, char** argv)
     // publish handles as ROS topic
     handles_pub.publish(handle_list_msg);
 
-    // publish handles as transforms
-    std::vector<tf::Transform>::iterator i;
-    int count = 0;
-    for (i = g_transforms.begin(); i < g_transforms.end(); i++) {
-      tfBroadcaster.sendTransform(tf::StampedTransform(*i, ros::Time::now(), "map", "handle" + boost::lexical_cast<std::string>(count)));
-      count++;
+    if (publish_transforms) {
+      // publish handles as transforms
+      std::vector<tf::Transform>::iterator i;
+      int count = 0;
+      for (i = g_transforms.begin(); i < g_transforms.end(); i++) {
+        tfBroadcaster.sendTransform(tf::StampedTransform(*i, ros::Time::now(), "map", "handle" + boost::lexical_cast<std::string>(count)));
+        count++;
+      }
     }
 
     //~ ROS_INFO("published %i grasp affordances for grasping", (int) cylinder_list_msg.cylinders.size());
